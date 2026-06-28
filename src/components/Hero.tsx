@@ -80,7 +80,7 @@ export default function Hero() {
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="https://i.ibb.co.com/B50zgJSB/Gemini-Generated-Image-88gsrq88gsrq88gs.png"
-            alt="Tajul Shahin"
+            alt="TazulShahin"
             className="w-full aspect-[4/5] object-cover object-center img-refined"
           />
 
