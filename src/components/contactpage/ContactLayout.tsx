@@ -1,10 +1,11 @@
 'use client';
 
-import { useActionState, useEffect } from 'react';
-import {
-  submitContactForm,
-  type ContactFormState,
-} from '@/app/actions/contact';
+import { useEffect, useState } from 'react';
+
+type ContactFormState = {
+  success: boolean;
+  error: string | null;
+};
 
 const initialState: ContactFormState = {
   success: false,
@@ -12,10 +13,8 @@ const initialState: ContactFormState = {
 };
 
 export default function ContactLayout() {
-  const [state, formAction, isPending] = useActionState(
-    submitContactForm,
-    initialState
-  );
+  const [state, setState] = useState<ContactFormState>(initialState);
+  const [isPending, setIsPending] = useState(false);
 
   useEffect(() => {
     if (state.success) {
@@ -28,6 +27,34 @@ export default function ContactLayout() {
       }
     }
   }, [state.success]);
+
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setIsPending(true);
+    setState(initialState);
+
+    const formData = new FormData(event.currentTarget);
+
+    try {
+      const response = await fetch('/api/contact', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        setState({ success: false, error: result.error || 'Something went wrong.' });
+        return;
+      }
+
+      setState({ success: true, error: null });
+    } catch {
+      setState({ success: false, error: 'An unexpected error occurred.' });
+    } finally {
+      setIsPending(false);
+    }
+  }
 
   return (
     <section className="max-w-container-max mx-auto px-gutter mb-section-gap relative z-10">
@@ -127,7 +154,7 @@ export default function ContactLayout() {
 
             <form
               id="contact-form"
-              action={formAction}
+              onSubmit={handleSubmit}
               className="relative z-10 flex flex-col gap-6"
             >
               {/* তোমার সব existing input field এখানে আগের মতোই থাকবে */}
