@@ -79,7 +79,7 @@ export default function Hero() {
         <div className="relative z-10 rounded-[1.5rem] overflow-hidden border border-white/5 glass-card shadow-2xl">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="https://i.ibb.co.com/pvrCVxVx/Gemini-Generated-Image-88gsrq88gsrq88gs.png"
+            src="https://i.ibb.co.com/B50zgJSB/Gemini-Generated-Image-88gsrq88gsrq88gs.png"
             alt="Tajul Shahin"
             className="w-full aspect-[4/5] object-cover object-center img-refined"
           />
