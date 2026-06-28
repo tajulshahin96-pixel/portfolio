@@ -3,7 +3,11 @@
 import { createClient } from '@/lib/supabase/server'
 import nodemailer from 'nodemailer'
 
-// Configure the Nodemailer transport using Gmail SMTP
+export type ContactFormState = {
+  success: boolean
+  error: string | null
+}
+
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
@@ -12,7 +16,10 @@ const transporter = nodemailer.createTransport({
   },
 })
 
-export async function submitContactForm(prevState: any, formData: FormData) {
+export async function submitContactForm(
+  prevState: ContactFormState,
+  formData: FormData
+): Promise<ContactFormState> {
   const firstName = formData.get('firstName') as string
   const lastName = formData.get('lastName') as string
   const email = formData.get('email') as string
@@ -20,13 +27,15 @@ export async function submitContactForm(prevState: any, formData: FormData) {
   const message = formData.get('message') as string
 
   if (!firstName || !lastName || !email || !service || !message) {
-    return { error: 'All fields are required.' }
+    return {
+      success: false,
+      error: 'All fields are required.',
+    }
   }
 
   try {
     const supabase = await createClient()
 
-    // Insert into Supabase
     const { error: dbError } = await supabase
       .from('contact_messages')
       .insert([
@@ -41,52 +50,55 @@ export async function submitContactForm(prevState: any, formData: FormData) {
 
     if (dbError) {
       console.error('Supabase Error:', dbError)
-      return { error: 'Failed to save message to database.' }
+
+      return {
+        success: false,
+        error: 'Failed to save message to database.',
+      }
     }
 
-    // Only send emails if Email credentials are set
     if (process.env.EMAIL_USER && process.env.EMAIL_APP_PASSWORD) {
-      const adminEmail = process.env.EMAIL_USER // Send notification to yourself
-      
-      // 1. Send notification to Admin
+      const adminEmail = process.env.EMAIL_USER
+
       await transporter.sendMail({
         from: `"Portfolio Contact" <${process.env.EMAIL_USER}>`,
         to: adminEmail,
         subject: `New Contact Form Submission: ${service}`,
         html: `
-          <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+          <div style="font-family:sans-serif">
             <h2>New message from ${firstName} ${lastName}</h2>
             <p><strong>Email:</strong> ${email}</p>
             <p><strong>Service:</strong> ${service}</p>
             <p><strong>Message:</strong></p>
-            <p style="background: #f4f4f4; padding: 15px; border-radius: 5px;">${message}</p>
+            <p>${message}</p>
           </div>
-        `
+        `,
       })
 
-      // 2. Send receipt to Client
       await transporter.sendMail({
         from: `"Tajul Shahin" <${process.env.EMAIL_USER}>`,
         to: email,
         subject: 'We received your message!',
         html: `
-          <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+          <div style="font-family:sans-serif">
             <h2>Hi ${firstName},</h2>
-            <p>Thank you for reaching out regarding <strong>${service}</strong>.</p>
-            <p>We have received your message and will get back to you shortly to discuss how we can help your business grow.</p>
-            <br/>
-            <p>Best regards,</p>
-            <p><strong>Tajul Shahin</strong></p>
+            <p>Thank you for contacting us.</p>
+            <p>We received your message and will reply soon.</p>
           </div>
-        `
+        `,
       })
-    } else {
-      console.warn('EMAIL_USER or EMAIL_APP_PASSWORD is not set. Emails were not sent.')
     }
 
-    return { success: true }
+    return {
+      success: true,
+      error: null,
+    }
   } catch (error) {
     console.error('Action Error:', error)
-    return { error: 'An unexpected error occurred.' }
+
+    return {
+      success: false,
+      error: 'An unexpected error occurred.',
+    }
   }
 }
